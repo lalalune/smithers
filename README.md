@@ -8,9 +8,10 @@ Write agent workflows as TypeScript, run them for minutes or days, and keep the 
 
 ```bash
 bunx smithers-orchestrator@latest init
+bunx smithers-orchestrator@latest init --template idea-to-prd
 ```
 
-This scaffolds a `.smithers/` folder with canonical workflows for implementation, review, debugging, planning, audits, and long-horizon missions.
+This scaffolds a `.smithers/` folder with canonical workflows for implementation, review, debugging, planning, audits, and long-horizon missions. Add `--template <id>` with a canonical starter ID when you want guided next steps for plain-English outcomes like product briefs, support incident fixes, launch checklists, quality audits, and larger milestone projects. Run `bunx smithers-orchestrator@latest starters` to browse the template IDs.
 
 Use the `smithers` CLI or Gateway console to operate runs.
 
@@ -81,6 +82,7 @@ Each task output is validated against its Zod schema and persisted to SQLite. If
 smithers up workflow.tsx --input '{"description": "Fix bug"}'
 smithers up workflow.tsx --run-id abc123 --resume true
 smithers eval workflow.tsx --cases evals/smoke.jsonl --suite smoke
+smithers optimize workflow.tsx --cases evals/smoke.jsonl --provider cerebras --model gpt-oss-120b
 smithers ps
 smithers workflow list
 smithers approve abc123 --node review
@@ -109,6 +111,21 @@ smithers eval workflow.tsx --cases evals/smoke.jsonl --suite smoke --force
 ```
 
 Reports are written to `.smithers/evals/<suite>.json` and the command exits non-zero when any case fails.
+
+## Prompt optimization
+
+Run GEPA-style prompt optimization against an eval suite:
+
+```bash
+smithers optimize workflow.tsx \
+  --cases evals/smoke.jsonl \
+  --suite smoke-gepa \
+  --provider cerebras \
+  --model gpt-oss-120b \
+  --artifact .smithers/optimizations/smoke-gepa.json
+```
+
+Smithers runs a baseline eval, generates prompt patches, reruns the suite with the candidate artifact, and writes the artifact only when the optimized score improves. Reuse the artifact with `smithers eval --optimization .smithers/optimizations/smoke-gepa.json`.
 
 ## Hot Reload
 

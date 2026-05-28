@@ -137,6 +137,8 @@ export function runSmithers(args, options) {
         input: options.stdin,
         encoding: "utf8",
         maxBuffer: 10 * 1024 * 1024,
+        timeout: options.timeoutMs ?? 60_000,
+        killSignal: "SIGTERM",
     });
     const stdout = result.stdout ?? "";
     const stderr = result.stderr ?? "";
@@ -145,7 +147,7 @@ export function runSmithers(args, options) {
         json = parseTrailingJson(stdout);
     }
     return {
-        exitCode: result.status ?? 1,
+        exitCode: result.status ?? (result.signal === "SIGTERM" ? 143 : 1),
         stdout,
         stderr,
         json,
@@ -240,6 +242,24 @@ export function writeFakeCodexBinary(dir, response = FAKE_AGENT_RESPONSE) {
         '  fs.writeFileSync(args[outputIndex + 1], "```json\\n" + payload + "\\n```\\n", "utf8");',
         "}",
         'process.stdout.write(JSON.stringify({ type: "turn.completed" }) + "\\n");',
+        "",
+    ].join("\n"));
+}
+/**
+ * @param {string} dir
+ */
+export function writeFakeOpenCodeBinary(dir, response = FAKE_AGENT_RESPONSE) {
+    return writeExecutable(dir, "opencode", [
+        EXECUTABLE_SHEBANG,
+        "const payload = process.env.SMITHERS_FAKE_AGENT_RESPONSE ?? " + JSON.stringify(response) + ";",
+        "process.stdout.write(JSON.stringify({",
+        '  type: "text",',
+        "  part: {",
+        '    type: "text",',
+        '    text: "```json\\n" + payload + "\\n```\\n",',
+        "  },",
+        "}) + \"\\n\");",
+        'process.stdout.write(JSON.stringify({ type: "step_finish", part: { type: "step-finish", reason: "done" } }) + "\\n");',
         "",
     ].join("\n"));
 }

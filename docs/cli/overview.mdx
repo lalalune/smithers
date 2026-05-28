@@ -32,14 +32,24 @@ Always invoke as `bunx smithers-orchestrator <command>` (see [Installation](/ins
 Commands listed by dotted name. `human` and `alerts` use an action positional instead of nested subcommands.
 
 ```toon
-commands[62]:
+commands[64]:
   - name: init
     purpose: Install the local workflow pack into .smithers/
-    flags[4]{name,short,type,default,desc}:
+    flags[5]{name,short,type,default,desc}:
       force,,boolean,false,Overwrite existing scaffold files
       agents-only,,boolean,false,Only create .smithers/agents/ and leave workflow pack untouched
       install,,boolean,true,Run bun install inside .smithers/ after scaffolding
       add-agents,,boolean,false,Launch the account registration wizard after scaffolding
+      template,,string,,Show next steps for a canonical starter template ID after init
+  - name: starters
+    purpose: Show plain-English starter workflows with copy-paste commands
+    args[1]{name,type,required,desc}:
+      id,string,false,Starter ID or alias
+    flags[4]{name,short,type,default,desc}:
+      audience,,string,,Filter by audience such as product, support, or founder
+      goal,,string,,Filter by goal such as plan, build, debug, or quality
+      workflow,,string,,Filter by seeded workflow ID
+      tag,,string,,Filter by starter tag
   - name: up
     purpose: Start or resume a workflow execution
     args[1]{name,type,required,desc}:
@@ -87,6 +97,28 @@ commands[62]:
       report,r,string,.smithers/evals/<suite>.json,Report path
       force,,boolean,false,Overwrite an existing report
       include-output,,boolean,true,Include workflow outputs in the report
+      max-concurrency,,number,,Per-workflow task concurrency
+      root,,string,,Tool sandbox root directory
+      log,,boolean,true,Enable NDJSON event log file output
+      log-dir,,string,,NDJSON event logs directory
+      allow-network,,boolean,false,Allow bash tool network requests
+      max-output-bytes,,number,,Max bytes a single tool call can return
+      tool-timeout-ms,,number,,Max wall-clock time per tool call in ms
+      optimization,,string,,Apply a Smithers optimization artifact while running the eval suite
+  - name: optimize
+    purpose: Run GEPA prompt optimization over a workflow eval suite and write an optimized prompt artifact
+    args[1]{name,type,required,desc}:
+      workflow,string,true,Workflow file path or discovered workflow ID
+    flags[16]{name,short,type,default,desc}:
+      cases,c,string,,JSON array, { cases: [...] }, or JSONL case file
+      suite,s,string,,Stable suite ID used in run IDs and report paths
+      provider,p,enum,cerebras,GEPA patch generator provider
+      model,m,string,,Optimizer model for provider-backed GEPA
+      artifact,a,string,,Write the optimized prompt artifact to this path
+      report-dir,,string,,Directory for baseline and optimized eval reports
+      min-improvement,,number,0.000001,Minimum required absolute score improvement
+      max-cases,,number,,Run only the first N cases
+      concurrency,j,number,1,Number of eval cases to run at once
       max-concurrency,,number,,Per-workflow task concurrency
       root,,string,,Tool sandbox root directory
       log,,boolean,true,Enable NDJSON event log file output

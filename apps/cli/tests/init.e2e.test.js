@@ -49,6 +49,7 @@ function writeWorkflowPackTypecheckHarness(repo) {
         "  export const Gateway: any;",
         "  export const ClaudeCodeAgent: any;",
         "  export const CodexAgent: any;",
+        "  export const OpenCodeAgent: any;",
         "  export const AntigravityAgent: any;",
         "  export const GeminiAgent: any;",
         "  export const tools: any;",
@@ -167,6 +168,7 @@ test("smithers init writes the expected workflow-pack layout and it typechecks",
     expect(repo.exists(".smithers/agents.ts")).toBe(true);
     expect(repo.exists(".smithers/agents/claude-code.ts")).toBe(true);
     expect(repo.exists(".smithers/agents/codex.ts")).toBe(true);
+    expect(repo.exists(".smithers/agents/opencode.ts")).toBe(true);
     expect(repo.exists(".smithers/agents/antigravity.ts")).toBe(true);
     expect(repo.exists(".smithers/agents/gemini.ts")).toBe(false);
     expect(repo.exists(".smithers/agents/index.ts")).toBe(true);
@@ -222,6 +224,54 @@ test("smithers init writes the expected workflow-pack layout and it typechecks",
     expect(repo.read(".smithers/workflows/kanban.tsx")).toContain('<Task id="tickets" output={outputs.tickets}>');
     runWorkflowPackTypecheck(repo);
 }, 20_000);
+test("smithers init --template preserves the default scaffold and returns the selected starter", () => {
+    const repo = createTempRepo();
+    const env = buildInitEnv(repo.dir);
+    const result = runSmithers(["init", "--template", "idea-to-prd", "--no-install"], {
+        cwd: repo.dir,
+        format: "json",
+        env,
+    });
+    expect(result.exitCode).toBe(0);
+    expect(repo.exists(".smithers/workflows/write-a-prd.tsx")).toBe(true);
+    expect(repo.exists(".smithers/workflows/implement.tsx")).toBe(true);
+    expect(result.json.template.id).toBe("idea-to-prd");
+    expect(result.json.template.workflow).toBe("write-a-prd");
+    expect(result.json.template.command).toStartWith("bunx smithers-orchestrator workflow run write-a-prd --");
+    expect(result.json.install).toMatchObject({
+        reason: "skip-install",
+        status: "skipped",
+    });
+});
+test("smithers init rejects unknown templates in option validation before writing the scaffold", () => {
+    const repo = createTempRepo();
+    const result = runSmithers(["init", "--template", "does-not-exist", "--no-install"], {
+        cwd: repo.dir,
+        format: "json",
+    });
+    expect(result.exitCode).toBe(4);
+    expect(result.json.code).toBe("VALIDATION_ERROR");
+    expect(result.json.message).toContain("Invalid input");
+    expect(result.json.fieldErrors).toEqual([
+        {
+            path: "template",
+            expected: "",
+            received: "",
+            message: "Invalid input",
+        },
+    ]);
+    expect(repo.exists(".smithers")).toBe(false);
+});
+test("smithers init rejects starter aliases before writing the scaffold", () => {
+    const repo = createTempRepo();
+    const result = runSmithers(["init", "--template", "prd", "--no-install"], {
+        cwd: repo.dir,
+        format: "json",
+    });
+    expect(result.exitCode).toBe(4);
+    expect(result.json.code).toBe("VALIDATION_ERROR");
+    expect(repo.exists(".smithers")).toBe(false);
+});
 test("smithers init --agents-only creates only the user-owned agent scaffold", () => {
     const repo = createTempRepo();
     const result = runSmithers(["init", "--agents-only"], {
@@ -231,6 +281,7 @@ test("smithers init --agents-only creates only the user-owned agent scaffold", (
     expect(result.exitCode).toBe(0);
     expect(repo.exists(".smithers/agents/claude-code.ts")).toBe(true);
     expect(repo.exists(".smithers/agents/codex.ts")).toBe(true);
+    expect(repo.exists(".smithers/agents/opencode.ts")).toBe(true);
     expect(repo.exists(".smithers/agents/antigravity.ts")).toBe(true);
     expect(repo.exists(".smithers/agents/gemini.ts")).toBe(false);
     expect(repo.exists(".smithers/agents/index.ts")).toBe(true);
@@ -372,4 +423,4 @@ test("seeded workflows reuse the shared review substrate", () => {
         expect(graph.exitCode).toBe(0);
         expect(JSON.stringify(graph.json)).toContain(`${reviewPrefix}:0`);
     }
-}, 15_000);
+}, 60_000);

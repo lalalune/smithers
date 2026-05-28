@@ -16,6 +16,7 @@
           "introduction",
           "installation",
           "quickstart",
+          "starters",
           "tour"
         ]
       },
@@ -46,6 +47,7 @@
           "cli/quickstart",
           "cli/overview",
           "guides/evals-quickstart",
+          "guides/workflow-optimization",
           "guides/tui",
           "deployment/reference",
           "deployment/control-plane",
@@ -211,6 +213,7 @@
           "examples/tools-agent",
           "examples/multi-agent-review",
           "examples/dynamic-plan",
+          "examples/workflow-studio-demo",
           "examples/loop",
           {
             "group": "Workflow Samples",
